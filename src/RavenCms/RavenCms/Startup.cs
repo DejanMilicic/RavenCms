@@ -15,6 +15,7 @@ using Raven.Client.Documents;
 using Raven.Client.Documents.Indexes;
 using Raven.Client.Documents.Session;
 using RavenCms.Infrastructure;
+using RavenCms.Raven.Indexes;
 
 namespace RavenCms
 {
@@ -51,7 +52,7 @@ namespace RavenCms
 
                 store.Initialize();
 
-                //IndexCreation.CreateIndexes(typeof().Assembly, store);
+                IndexCreation.CreateIndexes(typeof(Entries_ByTag).Assembly, store);
 
                 return store;
             });

@@ -1,13 +1,16 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Bogus;
 using Microsoft.AspNetCore.Mvc;
 using Raven.Client.Documents;
 using Raven.Client.Documents.BulkInsert;
+using Raven.Client.Documents.Linq;
 using Raven.Client.Documents.Operations;
 using Raven.Client.Documents.Session;
 using RavenCms.Infrastructure;
 using RavenCms.Models;
+using RavenCms.Raven.Indexes;
 
 namespace RavenCms.Controllers
 {
@@ -45,6 +48,19 @@ namespace RavenCms.Controllers
             }
 
             return "Database was empty, new data seeded";
+        }
+
+        [HttpGet("/{tag}")]
+        public async IAsyncEnumerable<Entry> GetAllTaggedWith(string tag)
+        {
+            var query = _session.Query<Entries_ByTag.Result, Entries_ByTag>()
+                .Where(x => x.Tag.ContainsAny(new string[]{tag}))
+                .OfType<Entry>();
+
+            await using var stream = await _session.Advanced.StreamAsync(query);
+
+            while (await stream.MoveNextAsync())
+                yield return stream.Current.Document;
         }
     }
 }
