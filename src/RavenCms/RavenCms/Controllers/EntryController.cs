@@ -53,7 +53,8 @@ namespace RavenCms.Controllers
         [HttpGet("/{tag}")]
         public async IAsyncEnumerable<Entry> GetAllTaggedWith(string tag)
         {
-            var query = _session.Query<Entries_ByTag.Result, Entries_ByTag>()
+            var query = _session
+                .Query<Entries_ByTag.Result, Entries_ByTag>()
                 .Where(x => x.Tag.ContainsAny(new string[]{tag}))
                 .OfType<Entry>();
 
@@ -61,6 +62,27 @@ namespace RavenCms.Controllers
 
             while (await stream.MoveNextAsync())
                 yield return stream.Current.Document;
+        }
+
+        [HttpGet("/{tag}/{skip}/{take}")]
+        public async Task<EntriesPage> GetPagedTaggedWith(string tag, int skip, int take)
+        {
+            var entries = await _session
+                .Query<Entries_ByTag.Result, Entries_ByTag>()
+                .Skip(skip)
+                .Take(take)
+                .Statistics(out QueryStatistics stats)
+                .Where(x => x.Tag.ContainsAny(new string[]{tag}))
+                .OfType<Entry>()
+                .ToArrayAsync();
+
+            return new EntriesPage
+            {
+                Entries = entries,
+                Skip = skip,
+                Take = take,
+                Total = stats.TotalResults
+            };
         }
     }
 }
