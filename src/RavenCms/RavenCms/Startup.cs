@@ -32,6 +32,8 @@ namespace RavenCms
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
+            services.AddHealthChecks();
+
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "RavenCms", Version = "v1" });
@@ -77,6 +79,7 @@ namespace RavenCms
 
             app.UseEndpoints(endpoints =>
             {
+                endpoints.MapHealthChecks("/healthcheck");
                 endpoints.MapControllers();
             });
         }
