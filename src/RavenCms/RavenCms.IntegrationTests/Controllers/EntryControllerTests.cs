@@ -37,6 +37,7 @@ namespace RavenCms.IntegrationTests.Controllers
 
             var stringContent = new StringContent(newEntryModelContent, Encoding.UTF8, MediaTypeNames.Application.Json); // use MediaTypeNames.Application.Json in Core 3.0+ and Standard 2.1+
             var result = HttpClient.PostAsync("/entry", stringContent).Result;
+            result.StatusCode.Should().Be(200);
 
             var session = Store.OpenSession();
 
