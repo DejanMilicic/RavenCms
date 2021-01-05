@@ -2,6 +2,8 @@
 using System.Threading.Tasks;
 using NBomber.Contracts;
 using NBomber.CSharp;
+using NBomber.Plugins.Http.CSharp;
+using NBomber.Plugins.Network.Ping;
 
 namespace RavenCms.LoadTesting
 {
@@ -9,8 +11,9 @@ namespace RavenCms.LoadTesting
     {
         static void Main(string[] args)
         {
+            /*
             // first, you need to create a step
-            var step = Step.Create("step", async context =>
+            var stepEmpty = Step.Create("step", async context =>
             {
                 // you can define and execute any logic here,
                 // for example: send http request, SQL query etc
@@ -21,10 +24,30 @@ namespace RavenCms.LoadTesting
             });
 
             // second, we add our step to the scenario
-            var scenario = ScenarioBuilder.CreateScenario("hello_world", step);
+            var scenario = ScenarioBuilder.CreateScenario("hello_world", stepEmpty);
 
             NBomberRunner
                 .RegisterScenarios(scenario)
+                .Run();
+            */
+
+            var step = HttpStep.Create("fetch_html_page", context =>
+                Http.CreateRequest("GET", "https://nbomber.com")
+            );
+
+            var scenario = ScenarioBuilder
+                .CreateScenario("nbomber_web_site", step)
+                .WithLoadSimulations(new[]
+                {
+                    Simulation.InjectPerSec(rate: 100, during: TimeSpan.FromSeconds(30))
+                });
+
+            var pingPluginConfig = PingPluginConfig.CreateDefault(new[] {"nbomber.com"});
+            var pingPlugin = new PingPlugin(pingPluginConfig);
+
+            NBomberRunner
+                .RegisterScenarios(scenario)
+                .WithWorkerPlugins(pingPlugin)
                 .Run();
         }
     }
