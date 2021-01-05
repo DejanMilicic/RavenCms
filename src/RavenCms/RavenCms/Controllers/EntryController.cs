@@ -50,6 +50,25 @@ namespace RavenCms.Controllers
             return "Database was empty, new data seeded";
         }
 
+        public class CreateEntryModel
+        {
+            public string[] Tags { get; set; }
+        }
+
+        [HttpPost("/entry")]
+        public async Task<string> Post([FromBody] CreateEntryModel e)
+        {
+            Entry entry = new Entry
+            {
+                Tags = e.Tags.ToList()
+            };
+
+            await _session.StoreAsync(entry);
+            await _session.SaveChangesAsync();
+
+            return entry.Id;
+        }
+
         [HttpGet("/{tag}")]
         public async IAsyncEnumerable<Entry> GetAllTaggedWith(string tag)
         {
