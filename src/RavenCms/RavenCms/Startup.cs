@@ -52,7 +52,7 @@ namespace RavenCms
 
                 store.Initialize();
 
-                IndexCreation.CreateIndexes(typeof(Entries_ByTag).Assembly, store);
+                IndexCreation.CreateIndexes(typeof(Startup).Assembly, store);
 
                 return store;
             });
