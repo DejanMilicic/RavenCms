@@ -4,6 +4,7 @@ using NBomber.Contracts;
 using NBomber.CSharp;
 using NBomber.Plugins.Http.CSharp;
 using NBomber.Plugins.Network.Ping;
+using Newtonsoft.Json;
 
 namespace RavenCms.LoadTesting
 {
@@ -31,18 +32,26 @@ namespace RavenCms.LoadTesting
                 .Run();
             */
 
-            var step = HttpStep.Create("fetch_html_page", context =>
-                Http.CreateRequest("GET", "https://nbomber.com")
+            var healthCheck = HttpStep.Create("healthcheck", context =>
+                Http.CreateRequest("GET", "http://localhost:52788/healthcheck")
+                    .WithCheck(async response =>
+                    {
+                        var rc = await response.Content.ReadAsStringAsync();
+
+                        return rc == "Healthy"
+                            ? Response.Ok()
+                            : Response.Fail();
+                    })
             );
 
             var scenario = ScenarioBuilder
-                .CreateScenario("nbomber_web_site", step)
+                .CreateScenario("smoke test", healthCheck)
                 .WithLoadSimulations(new[]
                 {
                     Simulation.InjectPerSec(rate: 100, during: TimeSpan.FromSeconds(30))
                 });
 
-            var pingPluginConfig = PingPluginConfig.CreateDefault(new[] {"nbomber.com"});
+            var pingPluginConfig = PingPluginConfig.CreateDefault(new[] {"RavenCms"});
             var pingPlugin = new PingPlugin(pingPluginConfig);
 
             NBomberRunner
