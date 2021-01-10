@@ -47,6 +47,21 @@ namespace RavenCms.Controllers
 
                 }).ToList();
         }
+
+        [HttpGet("/products/{skip}/{take}")]
+        public async Task<List<Products_ByEmployee.IndexEntry>> GetProductsPaged(string employee, int skip, int take)
+        {
+            var orders = await _session
+                .Query<Products_ByEmployee.IndexEntry, Products_ByEmployee>()
+                .Where(x => x.Employee == employee)
+                .ProjectInto<Products_ByEmployee.IndexEntry>()
+                .Skip(skip)
+                .Take(take)
+                .ToListAsync()
+                ;
+
+            return orders;
+        }
     }
 
     public class ProductForEmployee
