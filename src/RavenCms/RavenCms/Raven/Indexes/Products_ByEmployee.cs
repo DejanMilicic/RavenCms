@@ -25,6 +25,8 @@ namespace RavenCms.Raven.Indexes
                     Employee = order.Employee,
                     Product = orderLine.Product
                 };
+
+            //Stores.Add(x => x.Product, FieldStorage.Yes);
         }
     }
 }
