@@ -23,7 +23,7 @@ namespace RavenCms.Raven.Indexes
                     Product = orderLine.Product
                 };
 
-            //Stores.Add(x => x.Product, FieldStorage.Yes);
+            Stores.Add(x => x.Product, FieldStorage.Yes);
         }
     }
 }
