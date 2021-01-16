@@ -8,6 +8,8 @@ namespace RavenCms.Raven.Indexes
     {
         public class IndexEntry
         {
+            public string Id { get; set; }
+
             public string Employee { get; set; }
 
             public string Product { get; set; }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Bogus;
@@ -58,15 +59,35 @@ namespace RavenCms.Controllers
         }
 
         [HttpGet("/products/{skip}/{take}")]
-        public async Task<List<Products_ByEmployee.IndexEntry>> GetProductsPaged(string employee, int skip, int take)
+        public async Task<List<ProductForEmployee>> GetProductsPaged(string employee, int skip, int take)
         {
-            return await _session
+            var indexEntries = await _session
                 .Query<Products_ByEmployee.IndexEntry, Products_ByEmployee>()
                 .Where(x => x.Employee == employee)
                 .ProjectInto<Products_ByEmployee.IndexEntry>()
+                .Include(x => x.Id)
                 .Skip(skip)
                 .Take(take)
                 .ToListAsync();
+
+            var orders = _s.Load<Order>(indexEntries.Select(x => x.Id));
+            _s.Load<dynamic>(orders.Values.SelectMany(x => x.Lines).Select(x => x.Product));
+
+            return indexEntries
+                .Select(entry =>
+                    {
+                        var order = _s.Load<Order>(entry.Id);
+                        var product = _s.Load<dynamic>(entry.Product);
+                        int warranty = product.WarrantyLength != null ? product.WarrantyLength : 0;
+                        return new ProductForEmployee
+                        {
+                            OrderId = order.Id,
+                            ProductId = product.Id,
+                            ProductName = Convert.ToString(product.Name),
+                            ProductWarranty = warranty
+                        };
+                    }
+                ).ToList();
         }
     }
 
