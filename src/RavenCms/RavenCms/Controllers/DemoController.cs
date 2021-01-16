@@ -20,32 +20,41 @@ namespace RavenCms.Controllers
     public class DemoController : ControllerBase
     {
         private readonly IAsyncDocumentSession _session;
+        private readonly IDocumentSession _s;
         private readonly IDocumentStore _store;
 
-        public DemoController(IAsyncDocumentSession session, IDocumentStore store)
+        public DemoController(IAsyncDocumentSession session, IDocumentStore store, IDocumentSession s)
         {
             _session = session;
             _store = store;
+            _s = s;
         }
 
         [HttpGet("/products/")]
         public async Task<List<ProductForEmployee>> GetProducts(string employee)
         {
             var orders = await _session
-                .Query<Products_ByEmployee.IndexEntry, Products_ByEmployee>()
-                .Where(x => x.Employee == employee)
-                .OfType<Order>()
-                .ToListAsync()
-                ;
+                    .Query<Products_ByEmployee.IndexEntry, Products_ByEmployee>()
+                    .Where(x => x.Employee == employee)
+                    .OfType<Order>()
+                    .ToListAsync();
 
-            return orders.SelectMany(o => o.Lines, (order, line) =>
-                new ProductForEmployee
+            _s.Load<dynamic>(orders.SelectMany(x => x.Lines).Select(x => x.Product));
+
+            return orders
+                .SelectMany(o => o.Lines, (order, line) =>
                 {
-                    OrderId = order.Id,
-                    ProductId = line.Product,
-                    ProductName = line.ProductName
-
-                }).ToList();
+                    var product = _s.Load<dynamic>(line.Product);
+                    int warranty = product.WarrantyLength != null ? product.WarrantyLength : 0;
+                    return new ProductForEmployee
+                    {
+                        OrderId = order.Id,
+                        ProductId = line.Product,
+                        ProductName = line.ProductName,
+                        ProductWarranty = warranty
+                    };
+                }
+            ).ToList();
         }
 
         [HttpGet("/products/{skip}/{take}")]
@@ -68,5 +77,7 @@ namespace RavenCms.Controllers
         public string ProductId { get; set; }
 
         public string ProductName { get; set; }
+
+        public int ProductWarranty { get; set; }
     }
 }
