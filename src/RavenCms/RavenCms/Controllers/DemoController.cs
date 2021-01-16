@@ -59,16 +59,16 @@ namespace RavenCms.Controllers
         }
 
         [HttpGet("/products/{skip}/{take}")]
-        public async Task<List<ProductForEmployee>> GetProductsPaged(string employee, int skip, int take)
+        public List<ProductForEmployee> GetProductsPaged(string employee, int skip, int take)
         {
-            var indexEntries = await _session
+            var indexEntries = _s
                 .Query<Products_ByEmployee.IndexEntry, Products_ByEmployee>()
                 .Where(x => x.Employee == employee)
                 .ProjectInto<Products_ByEmployee.IndexEntry>()
                 .Include(x => x.Id)
                 .Skip(skip)
                 .Take(take)
-                .ToListAsync();
+                .ToList();
 
             var orders = _s.Load<Order>(indexEntries.Select(x => x.Id));
             _s.Load<dynamic>(orders.Values.SelectMany(x => x.Lines).Select(x => x.Product));
