@@ -19,8 +19,9 @@ namespace RavenCms.Raven.Indexes
         {
             Map = orders => from order in orders
                 from orderLine in order.Lines
-                select new
+                select new IndexEntry
                 {
+                    Id = order.Id,
                     Employee = order.Employee,
                     Product = orderLine.Product
                 };
