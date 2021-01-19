@@ -59,35 +59,36 @@ namespace RavenCms.Controllers
         }
 
         [HttpGet("/products/{skip}/{take}")]
-        public List<ProductForEmployee> GetProductsPaged(string employee, int skip, int take)
+        public async Task<List<ProductForEmployee>> GetProductsPaged(string employee, int skip, int take)
         {
-            var indexEntries = _s
+            var indexEntries = await _session
                 .Query<Products_ByEmployee.IndexEntry, Products_ByEmployee>()
+                .Include(x => x.Id)
+                .Include(x => x.Product)
                 .Where(x => x.Employee == employee)
                 .ProjectInto<Products_ByEmployee.IndexEntry>()
-                .Include(x => x.Id)
                 .Skip(skip)
                 .Take(take)
-                .ToList();
+                .ToListAsync();
 
-            var orders = _s.Load<Order>(indexEntries.Select(x => x.Id));
-            _s.Load<dynamic>(orders.Values.SelectMany(x => x.Lines).Select(x => x.Product));
+            List<ProductForEmployee> products = new List<ProductForEmployee>();
 
-            return indexEntries
-                .Select(entry =>
+            foreach (Products_ByEmployee.IndexEntry indexEntry in indexEntries)
+            {
+                var order = await _session.LoadAsync<Order>(indexEntry.Id);
+                var product = await _session.LoadAsync<dynamic>(indexEntry.Product);
+                int warranty = product.WarrantyLength != null ? product.WarrantyLength : 0;
+
+                products.Add(new ProductForEmployee
                     {
-                        var order = _s.Load<Order>(entry.Id);
-                        var product = _s.Load<dynamic>(entry.Product);
-                        int warranty = product.WarrantyLength != null ? product.WarrantyLength : 0;
-                        return new ProductForEmployee
-                        {
-                            OrderId = order.Id,
-                            ProductId = product.Id,
-                            ProductName = Convert.ToString(product.Name),
-                            ProductWarranty = warranty
-                        };
-                    }
-                ).ToList();
+                        OrderId = order.Id,
+                        ProductId = product.Id,
+                        ProductName = Convert.ToString(product.Name),
+                        ProductWarranty = warranty
+                    });
+            }
+
+            return products;
         }
     }
 
